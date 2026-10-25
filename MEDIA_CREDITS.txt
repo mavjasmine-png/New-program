@@ -1,0 +1,35 @@
+PHASE 3 — OPTIONAL COACHING GUIDES v3.4.0
+
+Coverage: 56 programme exercise/alternative entries plus 9 core/reset entries.
+Every entry has three written coaching stages and two visual reference positions.
+Some static holds, stretches and bike setups intentionally have similar positions.
+
+PHOTO SOURCE
+Free Exercise DB by yuhonas
+https://github.com/yuhonas/free-exercise-db
+The repository describes its exercise dataset and images as public-domain material.
+Images retrieved 25 October 2026 from its main/exercises directory.
+Photographs are bundled as local visual-*.jpg files; media.js maps them to guides.
+Original exercise identifiers used:
+Bicycling_Stationary; Dead_Bug; Dumbbell_Incline_Row; Dumbbell_Shoulder_Press;
+Hammer_Grip_Incline_DB_Bench_Press; Hyperextensions_Back_Extensions;
+Incline_Dumbbell_Press; Inverted_Row_with_Straps; Leg_Press;
+Leverage_Incline_Chest_Press; Leverage_Shoulder_Press; Pallof_Press;
+Pull_Through; Reverse_Machine_Flyes; Seated_Cable_Rows; Seated_Leg_Curl;
+Thigh_Abductor; V-Bar_Pulldown.
+
+ILLUSTRATIONS
+Purpose-drawn SVG position schematics for the other variations, bundled as visual-*.svg files.
+These simplify posture and equipment. They are not anatomical animations or
+individual technique assessments. Use the exercise-specific written coaching.
+
+No streaming videos, paid media services, API keys or accounts are required.
+
+COACHING REFERENCES
+Exercise-specific wording is editorial guidance, not individual technique assessment.
+Background references checked 25 October 2026:
+https://www.acefitness.org/resources/everyone/exercise-library/154/seated-leg-press/
+https://www.acefitness.org/resources/everyone/exercise-library/147/supine-dead-bug/
+https://www.nhs.uk/live-well/exercise/sitting-exercises/
+https://www.nbt.nhs.uk/our-services/a-z-services/physiotherapy/physiotherapy-patient-information/seated-exercises-hospital-at-home
+These references do not certify the app, every variation, or this programme for injury rehabilitation.

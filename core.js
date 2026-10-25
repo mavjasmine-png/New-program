@@ -1,0 +1,22 @@
+(function(root){
+'use strict';
+const date=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const daysBetween=(a,b)=>Math.round((Date.parse(b+'T12:00:00Z')-Date.parse(a+'T12:00:00Z'))/86400000);
+const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(Date.parse(s))&&new Date(s+'T12:00:00Z').toISOString().slice(0,10)===s;
+const fresh=()=>({schema:2,start:date(),block:1,sessions:{},prefs:{},legacy:null});
+const week=(s,d=date())=>Math.max(1,Math.min(8,Math.floor(daysBetween(s.start,d)/7)+1));
+const target=(e,w,day,express=false)=>({sets:w===5?Math.max(1,Math.floor(e.sets/2)):e.sets,rir:day==='wed'||day==='sun'?'4–5':w===5?'4–5':w<=2||e.hinge?'3':w<=4||w===8?'2–3':'2',rest:e.rest});
+function validate(s){if(!s||s.schema!==2||!validDate(s.start)||!Number.isInteger(s.block)||s.block<1||!s.sessions||Array.isArray(s.sessions)||typeof s.sessions!=='object'||!s.prefs||typeof s.prefs!=='object')throw Error('This is not a compatible training backup.');
+for(const [key,v]of Object.entries(s.sessions)){if(!/^[0-9]+\|[1-8]\|(mon|tue|wed|thu|fri|sat|sun)$/.test(key)||!v||typeof v!=='object'||!v.entries||typeof v.entries!=='object')throw Error('Invalid session data.');if(!validDate(v.date)||['notes','response','nextDay'].some(f=>v[f]!==undefined&&typeof v[f]!=='string')||(v.choices!==undefined&&(!v.choices||typeof v.choices!=='object'||Array.isArray(v.choices))))throw Error('Invalid session details.');if(v.express!==undefined&&typeof v.express!=='boolean')throw Error('Invalid session mode.');
+if(v.lastSlot!==undefined&&typeof v.lastSlot!=='string')throw Error('Invalid resume position.');
+if(v.skipped!==undefined){if(!v.skipped||typeof v.skipped!=='object'||Array.isArray(v.skipped))throw Error('Invalid skipped exercises.');for(const item of Object.values(v.skipped)){if(!item||typeof item.id!=='string'||typeof item.reason!=='string'||item.reason.length>100)throw Error('Invalid skip reason.');}}
+if(v.complete!==undefined&&typeof v.complete!=='boolean')throw Error('Invalid completion status.');for(const e of Object.values(v.entries)){if(!e||typeof e!=='object'||!Array.isArray(e.sets)||e.sets.length>20)throw Error('Invalid set data.');for(const row of e.sets){if(!row||typeof row!=='object')throw Error('Invalid row.');if(row.done!==undefined&&typeof row.done!=='boolean')throw Error('Invalid set completion.');for(const f of ['load','left','right','rir']){if(row[f]!==undefined&&row[f]!==''&&(!Number.isFinite(Number(row[f]))||Number(row[f])<0||Number(row[f])>(f==='rir'?10:10000)))throw Error('Invalid numeric entry.');}}}}return s;}
+function importState(raw){if(raw?.schema===2)return validate(raw);if(raw&&typeof raw.logs==='object'&&!Array.isArray(raw.logs)){let s=fresh();s.legacy=raw;return s;}throw Error('Choose a Phase 3 JSON backup.');}
+function previous(s,id,key){return Object.entries(s.sessions).filter(([k,v])=>k!==key&&((+k.split('|')[0]<+key.split('|')[0])||(+k.split('|')[0]===+key.split('|')[0]&&+k.split('|')[1]<+key.split('|')[1]))&&v.entries?.[id]?.sets.some(r=>r.done)).map(([k,v])=>({key:k,date:v.date||'',entry:v.entries[id]})).sort((a,b)=>b.date.localeCompare(a.date)||b.key.localeCompare(a.key))[0];}
+function visibleSlots(program,day,express){const d=program.days.find(d=>d.id===day);return express&&['mon','tue','thu','fri'].includes(day)?d.slots.slice(0,3):d.slots;}
+function sessionSummary(program,s,prefs,w,day){const slots=visibleSlots(program,day,s.express);let completed=0,skipped=0,plannedSets=0,selectedSets=0;
+for(const slot of slots){const preferred=s.choices?.[slot.id]||prefs[slot.id],id=slot.options.includes(preferred)?preferred:slot.options[0],n=target(program.exercises[id],w,day).sets,rows=s.entries[id]?.sets||[];const done=rows.slice(0,n).filter(r=>r.done).length;plannedSets+=n;selectedSets+=done;if(s.skipped?.[slot.id])skipped++;else if(done===n)completed++;}
+const loggedSets=Object.values(s.entries).reduce((n,e)=>n+e.sets.filter(r=>r.done).length,0);
+return {total:slots.length,completed,skipped,remaining:slots.length-completed-skipped,plannedSets,selectedSets,loggedSets,partial:completed!==slots.length};}
+const api={date,daysBetween,validDate,fresh,week,target,validate,importState,previous,visibleSlots,sessionSummary};if(typeof module!=='undefined')module.exports=api;else root.Training=api;
+})(typeof window!=='undefined'?window:this);

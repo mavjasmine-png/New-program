@@ -1,0 +1,11 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+(async()=>{
+let ctx={window:{}};vm.runInNewContext(fs.readFileSync(__dirname+'/media.js','utf8'),ctx);const media=ctx.window.DEMO_MEDIA;
+const nodes={};for(const id of ['offlineStatus','mediaStatus','connectionStatus','updateStatus','mediaProgress','updateNotice'])nodes[id]={textContent:'',hidden:true};
+const stores=new Map(),normal=f=>new URL(typeof f==='string'?f:f.url,'https://test.invalid/app/').href;
+const caches={has:async name=>stores.has(name),open:async name=>{if(!stores.has(name))stores.set(name,new Map());const store=stores.get(name);return {match:async f=>store.get(normal(f)),put:async(f,r)=>store.set(normal(f),r),keys:async()=>[...store.keys()].map(url=>({url}))};}};
+let failures=1,calls=0;ctx={window:{caches,DEMO_MEDIA:media,addEventListener:()=>{}},document:{getElementById:id=>nodes[id],querySelectorAll:()=>[],addEventListener:()=>{}},navigator:{onLine:false,serviceWorker:{register:()=>Promise.reject(Error('not installed')),addEventListener:()=>{}}},caches,location:{href:'https://test.invalid/app/',protocol:'https:'},URL,fetch:async()=>{calls++;if(failures-->0)throw Error('network interrupted');return {ok:true};}};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync(__dirname+'/offline.js','utf8'),ctx);await new Promise(r=>setImmediate(r));
+await caches.open('phase3-shell-3.4.0');await ctx.window.Offline.refresh();assert(nodes.offlineStatus.textContent.includes('pending'),'empty cache is not offline-ready');
+ctx.navigator.onLine=true;await ctx.window.Offline.download();assert(nodes.mediaStatus.textContent.includes('could not be saved'));assert.equal(nodes.mediaProgress.value,91);await ctx.window.Offline.download();assert.equal(nodes.mediaProgress.value,92);assert(nodes.mediaStatus.textContent.includes('All 65'));assert.equal(calls,93,'retry only the missing file');ctx.navigator.onLine=false;await ctx.window.Offline.refresh();assert(nodes.offlineStatus.textContent.startsWith('Offline'));assert(nodes.mediaStatus.textContent.includes('All 65'));console.log('PASS: interrupted offline download, retry only missing assets, accurate readiness and offline status.');
+})().catch(e=>{console.error(e);process.exitCode=1});
